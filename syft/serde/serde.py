@@ -64,11 +64,13 @@ from syft.frameworks.torch import pointers
 
 from syft.serde.native_serde import MAP_NATIVE_SIMPLIFIERS_AND_DETAILERS
 from syft.serde.torch_serde import MAP_TORCH_SIMPLIFIERS_AND_DETAILERS
+from syft.serde.tensorflow_serde import MAP_TF_SIMPLIFIERS_AND_DETAILERS
 
 # Maps a type to a tuple containing its simplifier and detailer function
 MAP_TO_SIMPLIFIERS_AND_DETAILERS = OrderedDict(
     list(MAP_NATIVE_SIMPLIFIERS_AND_DETAILERS.items())
     + list(MAP_TORCH_SIMPLIFIERS_AND_DETAILERS.items())
+    + list(MAP_TF_SIMPLIFIERS_AND_DETAILERS.items())
 )
 
 # If a object implements its own simplify and detail functions it should be stored in this list

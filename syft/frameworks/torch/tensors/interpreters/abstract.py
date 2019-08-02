@@ -286,7 +286,7 @@ class AbstractTensor(AbstractObject):
 
 
 def initialize_tensor(
-    hook_self, cls, torch_tensor: bool = False, owner=None, id=None, *init_args, **init_kwargs
+    hook_self, cls, is_tensor: bool = False, owner=None, id=None, *init_args, **init_kwargs
 ):
     """Initializes the tensor.
 
@@ -303,7 +303,7 @@ def initialize_tensor(
     """
     cls.is_wrapper = False
 
-    if not torch_tensor:
+    if not is_tensor:
         cls.native___init__(*init_args, **init_kwargs)
 
     _apply_args(hook_self, cls, owner, id)
