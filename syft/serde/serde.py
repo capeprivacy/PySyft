@@ -42,6 +42,7 @@ import numpy
 import zstd
 
 import syft as sy
+from syft import dependency_check
 
 from syft.federated import TrainConfig
 
@@ -64,8 +65,16 @@ from syft.frameworks.torch.tensors.interpreters import MultiPointerTensor
 from syft.frameworks.torch import pointers
 
 from syft.serde.native_serde import MAP_NATIVE_SIMPLIFIERS_AND_DETAILERS
-from syft.serde.torch_serde import MAP_TORCH_SIMPLIFIERS_AND_DETAILERS
-from syft.serde.tensorflow_serde import MAP_TF_SIMPLIFIERS_AND_DETAILERS
+
+if dependency_check.torch_available:
+    from syft.serde.torch_serde import MAP_TORCH_SIMPLIFIERS_AND_DETAILERS
+else:
+    MAP_TORCH_SIMPLIFIERS_AND_DETAILERS = {}
+
+if dependency_check.tensorflow_available:
+    from syft.serde.tensorflow_serde import MAP_TF_SIMPLIFIERS_AND_DETAILERS
+else:
+    MAP_TF_SIMPLIFIERS_AND_DETAILERS = {}
 
 # Maps a type to a tuple containing its simplifier and detailer function
 MAP_TO_SIMPLIFIERS_AND_DETAILERS = OrderedDict(

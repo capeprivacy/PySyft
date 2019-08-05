@@ -13,6 +13,7 @@ from syft import workers
 
 from syft.workers import BaseWorker
 from syft.messaging import Plan
+from syft.frameworks.hook import BaseHook
 from syft.frameworks.torch.tensors.interpreters import AutogradTensor
 from syft.frameworks.torch.tensors.interpreters import TorchTensor
 from syft.frameworks.torch.pointers import PointerTensor
@@ -29,7 +30,7 @@ from syft.exceptions import route_method_exception
 from syft.exceptions import TensorsNotCollocatedException
 
 
-class TorchHook:
+class TorchHook(BaseHook):
     """A Hook which Overrides Methods on PyTorch Tensors.
 
     The purpose of this class is to:

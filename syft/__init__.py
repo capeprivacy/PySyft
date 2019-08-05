@@ -1,5 +1,5 @@
 r"""
-PySyft is a Python library for secure, private Deep Learning. 
+PySyft is a Python library for secure, private Deep Learning.
 PySyft decouples private data from model training, using Federated Learning,
 Differential Privacy, and Multi-Party Computation (MPC) within PyTorch.
 """
@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 from syft import dependency_check
 
-if dependency_check.keras_available:
+if dependency_check.tfe_available:
     from syft.frameworks.keras import KerasHook
     from syft.workers import TFECluster
     from syft.workers import TFEWorker
 else:
-    logger.warning("Keras (Tensorflow) not available.")
+    logger.warning("TF Encrypted Keras not available.")
 
 # Pytorch dependencies
 # Import Hook

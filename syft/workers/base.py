@@ -1,8 +1,14 @@
-import logging
-
 from abc import abstractmethod
-import syft as sy
+import logging
+from typing import Callable
+from typing import List
+from typing import Tuple
+from typing import Union
+from typing import TYPE_CHECKING
 
+import torch
+
+import syft as sy
 from syft.frameworks.torch.tensors.interpreters import AbstractTensor
 from syft.generic import ObjectStorage
 from syft.exceptions import GetNotPermittedError
@@ -11,12 +17,6 @@ from syft.exceptions import ResponseSignatureError
 from syft.workers import AbstractWorker
 from syft import messaging
 from syft import codes
-from typing import Callable
-from typing import List
-from typing import Tuple
-from typing import Union
-from typing import TYPE_CHECKING
-import torch
 
 # this if statement avoids circular imports between base.py and pointer.py
 if TYPE_CHECKING:
@@ -68,7 +68,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
 
     def __init__(
         self,
-        hook: "sy.TorchHook",
+        hook: "sy.frameworks.BaseHook",
         id: Union[int, str] = 0,
         data: Union[List, tuple] = None,
         is_client_worker: bool = False,

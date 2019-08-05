@@ -1,9 +1,12 @@
+import logging
+
 import syft
 from syft import workers
 from syft.workers.base import BaseWorker
+from syft.frameworks.hook import BaseHook
 
 
-class TensorFlowHook(object):
+class TensorFlowHook(BaseHook):
     def __init__(self, tensorflow, local_worker: BaseWorker = None, is_client: bool = True):
         self.torch = tensorflow
         self.tensorflow = tensorflow
