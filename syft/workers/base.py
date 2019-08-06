@@ -14,6 +14,7 @@ from syft.generic import ObjectStorage
 from syft.exceptions import GetNotPermittedError
 from syft.exceptions import WorkerNotFoundException
 from syft.exceptions import ResponseSignatureError
+from syft.frameworks.types import FrameworkTensor
 from syft.workers import AbstractWorker
 from syft import messaging
 from syft import codes
@@ -182,7 +183,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
         """
         self.hook.local_worker.remove_worker_from_registry(worker_id=self.id)
 
-    def load_data(self, data: List[Union[torch.Tensor, AbstractTensor]]) -> None:
+    def load_data(self, data: List[Union[FrameworkTensor, AbstractTensor]]) -> None:
         """Allows workers to be initialized with data when created
 
            The method registers the tensor individual tensor objects.
@@ -272,7 +273,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
 
     def send(
         self,
-        obj: Union[torch.Tensor, AbstractTensor],
+        obj: Union[FrameworkTensor, AbstractTensor],
         workers: "BaseWorker",
         ptr_id: Union[str, int] = None,
         local_autograd=False,
@@ -713,7 +714,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
         return self.send_msg(codes.MSGTYPE.IS_NONE, pointer, location=pointer.location)
 
     @staticmethod
-    def get_tensor_shape(tensor: torch.Tensor) -> List:
+    def get_tensor_shape(tensor: FrameworkTensor) -> List:
         """
         Returns the shape of a tensor casted into a list, to bypass the serialization of
         a torch.Size object.
@@ -786,7 +787,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
                 if query_item == str(key):
                     match = True
 
-                if isinstance(obj, torch.Tensor):
+                if isinstance(obj, FrameworkTensor):
                     if obj.tags is not None:
                         if query_item in obj.tags:
                             match = True

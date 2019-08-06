@@ -32,13 +32,11 @@ By default, we serialize using msgpack and compress using lz4.
 If different compressions are required, the worker can override the function apply_compress_scheme
 """
 from collections import OrderedDict
-import torch
 import msgpack
 import lz4
 from lz4 import (  # noqa: F401
     frame,
 )  # needed as otherwise we will get: module 'lz4' has no attribute 'frame'
-import numpy
 import zstd
 
 import syft as sy
@@ -67,6 +65,7 @@ from syft.frameworks.torch import pointers
 from syft.serde.native_serde import MAP_NATIVE_SIMPLIFIERS_AND_DETAILERS
 
 if dependency_check.torch_available:
+    import torch
     from syft.serde.torch_serde import MAP_TORCH_SIMPLIFIERS_AND_DETAILERS
 else:
     MAP_TORCH_SIMPLIFIERS_AND_DETAILERS = {}
@@ -263,6 +262,8 @@ def deserialize(binary: bin, worker: AbstractWorker = None, details=True) -> obj
         object: the deserialized form of the binary input.
     """
     if worker is None:
+        # TODO[jvmancuso]: Generalize to different hooks.
+        #    This might be worth a standalone function.
         worker = sy.torch.hook.local_worker
 
     # 1) Decompress the binary if needed
