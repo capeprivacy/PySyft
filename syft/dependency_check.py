@@ -1,9 +1,6 @@
 from __future__ import absolute_import
 from distutils.version import LooseVersion
 import logging
-import sys
-
-print(sys.path)
 
 logger = logging.getLogger(__name__)
 

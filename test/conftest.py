@@ -61,14 +61,17 @@ def workers(hook):
 
 
 @pytest.fixture
-def no_tf_encrypted():
-    import_orig = builtins.__import__
+def hide_module():
+    def missing_module_spoofer(module_name):
+        import_orig = builtins.__import__
 
-    def mocked_import(name, globals, locals, fromlist, level):
-        if "tf_encrypted" in name:
-            raise ImportError()
-        return import_orig(name, globals, locals, fromlist, level)
+        def mocked_import(name, globals, locals, fromlist, level):
+            if module_name in name:
+                raise ImportError()
+            return import_orig(name, globals, locals, fromlist, level)
 
-    builtins.__import__ = mocked_import
-    yield
-    builtins.__import__ = import_orig
+        builtins.__import__ = mocked_import
+        yield
+        builtins.__import__ = import_orig
+
+    return missing_module_spoofer

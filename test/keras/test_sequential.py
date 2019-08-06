@@ -4,12 +4,12 @@ import numpy as np
 import syft as sy
 from syft import dependency_check
 
-if dependency_check.keras_available:
+if dependency_check.tfe_available:
     import tensorflow as tf
     import tf_encrypted as tfe
 
 
-@pytest.mark.skipif(not dependency_check.keras_available, reason="tf_encrypted not installed")
+@pytest.mark.skipif(not dependency_check.tfe_available, reason="tf_encrypted not installed")
 def test_instantiate_tfe_layer():
 
     from syft.frameworks.keras.model.sequential import _instantiate_tfe_layer
@@ -47,7 +47,7 @@ def test_instantiate_tfe_layer():
     np.testing.assert_allclose(actual, expected, rtol=0.001)
 
 
-@pytest.mark.skipif(not dependency_check.keras_available, reason="tf_encrypted not installed")
+@pytest.mark.skipif(not dependency_check.tfe_available, reason="tf_encrypted not installed")
 def test_share():
 
     from tensorflow.keras import Sequential

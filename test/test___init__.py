@@ -2,8 +2,9 @@ import sys
 import pytest
 
 
-@pytest.mark.usefixtures("no_tf_encrypted")
-def test_tf_encrypted_missing_import_syft():
+@pytest.mark.usefixtures("hide_module")
+def test_tf_encrypted_missing_import_syft(hide_module):
+    hide_module("tf_encrypted")
 
     sys.modules.pop("syft", None)
     sys.modules.pop("syft.dependency_check", None)

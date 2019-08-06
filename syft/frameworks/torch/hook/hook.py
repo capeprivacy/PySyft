@@ -758,7 +758,7 @@ class TorchHook(BaseHook):
                 hook_self=hook_self,
                 cls=cls,
                 id=id,
-                torch_tensor=torch_tensor,
+                is_tensor=torch_tensor,
                 init_args=args,
                 init_kwargs=kwargs,
             )
