@@ -62,16 +62,14 @@ def workers(hook):
 
 @pytest.fixture
 def hide_module():
-    def missing_module_spoofer(module_name):
-        import_orig = builtins.__import__
+    import_orig = builtins.__import__
 
-        def mocked_import(name, globals, locals, fromlist, level):
-            if module_name in name:
+    def mocked_import(name, globals, locals, fromlist, level):
+        for module_name in ["tensorflow", "tf_encrypted", "torch"]:
+            if module_name == name:
                 raise ImportError()
-            return import_orig(name, globals, locals, fromlist, level)
+        return import_orig(name, globals, locals, fromlist, level)
 
-        builtins.__import__ = mocked_import
-        yield
-        builtins.__import__ = import_orig
-
-    return missing_module_spoofer
+    builtins.__import__ = mocked_import
+    yield
+    builtins.__import__ = import_orig
