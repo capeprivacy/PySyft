@@ -3,7 +3,8 @@ from typing import Union
 
 import torch
 
-from syft.frameworks.torch.tensors.interpreters import AbstractTensor
+#from syft.frameworks.torch.tensors.interpreters import AbstractTensor
+from syft.frameworks.tensorflow.tensors.interpreters import AbstractTensor
 
 
 class ObjectStorage:

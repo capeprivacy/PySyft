@@ -5,8 +5,8 @@ from typing import Tuple
 from typing import Union
 
 import torch
-
-from syft.frameworks.torch.tensors.interpreters.abstract import AbstractTensor
+from syft.frameworks.tensorflow.tensors.interpreters.abstract import AbstractTensor
+#from syft.frameworks.torch.tensors.interpreters.abstract import AbstractTensor
 from syft.generic import ObjectStorage
 from syft.codes import MSGTYPE
 import syft as sy

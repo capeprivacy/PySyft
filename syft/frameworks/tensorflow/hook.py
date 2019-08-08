@@ -16,6 +16,7 @@ from syft.frameworks.hook import BaseHook
 from syft.frameworks.tensorflow.tensorflow_attributes import TorchAttributes
 
 from syft.frameworks.tensorflow.tensors.interpreters import TorchTensor
+from syft.frameworks.tensorflow.tensors.interpreters.abstract import initialize_tensor
 
 
 class TensorFlowHook(BaseHook):

@@ -137,7 +137,10 @@ class TorchTensor(AbstractTensor):
             else:
                 return type(self).__name__ + ">" + self.child.__repr__()
         else:
-            out = self.native___repr__()
+            #out = self.native___repr__()
+            # TODO investigate why tensorflow.constant([2, 3, 4]).native___repr__()
+            # Doesn't work in eagermode
+            out = "tensor([])"
 
             big_repr = False
 
@@ -165,10 +168,13 @@ class TorchTensor(AbstractTensor):
             return self.child.id
         else:
             try:
-                return self._id
+                #return self._id
+                return self.sy_id
             except AttributeError:
-                self._id = syft.ID_PROVIDER.pop()
-                return self._id
+                #self._id = syft.ID_PROVIDER.pop()
+                #return self._id
+                self.sy_id = syft.ID_PROVIDER.pop()
+                return self.sy_id
 
     @id.setter
     def id(self, new_id):
@@ -449,7 +455,7 @@ class TorchTensor(AbstractTensor):
         if shape is None:
             shape = self.shape
 
-        ptr = syft.PointerTensor.create_pointer(
+        ptr = syft.frameworks.tensorflow.pointers.PointerTensor.create_pointer(
             self,
             location,
             id_at_location,

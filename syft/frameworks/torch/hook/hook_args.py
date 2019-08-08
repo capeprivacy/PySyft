@@ -627,7 +627,7 @@ register_response_functions = {}
 
 
 def register_response(
-    attr: str, response: object, response_ids: object, owner: sy.workers.AbstractWorker
+    attr: str, response: object, response_ids: object, owner#: sy.workers.AbstractWorker
 ) -> object:
     """
     When a remote worker execute a command sent by someone else, the response is
@@ -699,7 +699,7 @@ def build_register_response_function(response: object) -> Callable:
 
 def register_tensor(
     tensor: Union[torch.Tensor, AbstractTensor],
-    owner: sy.workers.AbstractWorker,
+    owner, #: sy.workers.AbstractWorker,
     response_ids: List = list(),
 ):
     """
