@@ -39,7 +39,7 @@ def default_pytorch_maximum_precision():
     return 62
 
 
-class TorchTensor(AbstractTensor):
+class TensorFlowTensor(AbstractTensor):
     """Add methods to this tensor to have them added to every torch.Tensor object.
 
     This tensor is simply a more convenient way to add custom functions to
@@ -334,9 +334,6 @@ class TorchTensor(AbstractTensor):
                 garbage_collect_data=garbage_collect_data,
             )
 
-            print("I am a pointer", type(ptr))
-            print("I am a pointer", ptr)
-
             ptr.description = self.description
             ptr.tags = self.tags
 
@@ -346,7 +343,6 @@ class TorchTensor(AbstractTensor):
                 if ptr_ is not None:
                     ptr_.garbage_collect_data = False
             
-            print("What hapened to pointer?", ptr)
             # we need to cache this weak reference to the pointer so that
             # if this method gets called multiple times we can simply re-use
             # the same pointer which was previously created
@@ -374,8 +370,6 @@ class TorchTensor(AbstractTensor):
                     return self
                 else:
                     output = ptr if no_wrap else ptr.wrap()
-                    print("this my final pointer", output)
-                    print("wrap?", no_wrap)
 
 
             # if self.requires_grad:

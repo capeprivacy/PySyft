@@ -254,8 +254,6 @@ class AbstractTensor(AbstractObject):
         Returns:
             A pytorch tensor.
         """
-        print("I am the wrapper dude!!!")
-        #wrapper = torch.Tensor()
         wrapper = tensorflow.Tensor()
         wrapper.child = self
         wrapper.is_wrapper = True

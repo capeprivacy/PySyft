@@ -4,7 +4,7 @@ from typing import Any
 from types import ModuleType
 
 
-class TorchAttributes(object):
+class TensorFlowAttributes(object):
     """Adds torch module related custom attributes.
 
     TorchAttributes is a special class where all custom attributes related

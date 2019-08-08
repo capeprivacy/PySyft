@@ -13,9 +13,9 @@ import syft
 from syft import workers
 from syft.workers.base import BaseWorker
 from syft.frameworks.hook import BaseHook
-from syft.frameworks.tensorflow.tensorflow_attributes import TorchAttributes
+from syft.frameworks.tensorflow.tensorflow_attributes import TensorFlowAttributes
 
-from syft.frameworks.tensorflow.tensors.interpreters import TorchTensor
+from syft.frameworks.tensorflow.tensors.interpreters import TensorFlowTensor
 from syft.frameworks.tensorflow.tensors.interpreters.abstract import initialize_tensor
 
 
@@ -36,7 +36,7 @@ class TensorFlowHook(BaseHook):
             tensorflow.tf_hooked = True
         
         # Add all the torch attributes in the syft.torch attr
-        syft.tensorflow = TorchAttributes(tensorflow, self)
+        syft.tensorflow = TensorFlowAttributes(tensorflow, self)
 
         if self.local_worker is None:
             # Every TorchHook instance should have a local worker which is
@@ -55,7 +55,7 @@ class TensorFlowHook(BaseHook):
 
         self.args_hook_for_overloaded_attr = {}
 
-        self._hook_native_tensor(tensorflow.Tensor, TorchTensor)
+        self._hook_native_tensor(tensorflow.Tensor, TensorFlowTensor)
 
     
     def _hook_native_tensor(self, tensor_type: type, syft_type: type):
@@ -92,7 +92,7 @@ class TensorFlowHook(BaseHook):
         # Overload auto overloaded with Torch methods
         self._add_methods_from__torch_tensor(tensor_type, syft_type)
 
-        #self._hook_native_methods(tensor_type)
+        self._hook_native_methods(tensor_type)
 
     
     def _add_registration_to___init__(hook_self, tensor_type: type, torch_tensor: bool = False):
@@ -285,7 +285,7 @@ class TensorFlowHook(BaseHook):
                 if hasattr(tensor_type, attr):
                     setattr(tensor_type, f"native_{attr}", getattr(tensor_type, attr))
                 # Add to the native tensor this method
-                setattr(tensor_type, attr, getattr(TorchTensor, attr))
+                setattr(tensor_type, attr, getattr(TensorFlowTensor, attr))
 
     def _hook_native_methods(self, tensor_type: type):
             """

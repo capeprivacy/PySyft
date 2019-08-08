@@ -1,6 +1,6 @@
 from . import tensors
 from .hook import TensorFlowHook
-from .tensorflow_attributes import TorchAttributes
+from .tensorflow_attributes import TensorFlowAttributes
 
 
-__all__ = ["TensorFlowHook", "TorchAttributes", "tensors"]
+__all__ = ["TensorFlowHook", "TensorFlowAttributes", "tensors"]
