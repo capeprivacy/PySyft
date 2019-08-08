@@ -33,6 +33,7 @@ else:
 # Pytorch dependencies
 # Import Hook
 from syft.frameworks.torch import TorchHook
+from syft.frameworks.tensorflow import TensorFlowHook
 
 # Import Tensor Types
 from syft.frameworks.torch.tensors.decorators import LoggingTensor
@@ -87,6 +88,7 @@ __all__ = [
     "serde",
     "torch_serde",
     "TorchHook",
+    "TensorFlowHook",
     "VirtualWorker",
     "Plan",
     "codes",

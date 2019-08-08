@@ -8,8 +8,10 @@ import weakref
 
 import syft
 from syft.exceptions import InvalidTensorForRemoteGet
-from syft.frameworks.torch.tensors.interpreters import AbstractTensor
-from syft.frameworks.torch.pointers import PointerTensor
+#from syft.frameworks.torch.tensors.interpreters import AbstractTensor
+from syft.frameworks.tensorflow.tensors.interpreters import AbstractTensor
+from syft.frameworks.tensorflow.pointers import PointerTensor
+#from syft.frameworks.torch.pointers import PointerTensor
 from syft.workers import BaseWorker
 from syft.frameworks.torch.tensors.interpreters.crt_precision import _moduli_for_fields
 
@@ -173,7 +175,9 @@ class TorchTensor(AbstractTensor):
         if self.is_wrapper:
             self.child.id = new_id
         else:
-            self._id = new_id
+            #self._id = new_id
+            # _id is not writable for EagerTensor object
+            self.sy_id = new_id 
 
     def _is_parameter(self):
         """
@@ -324,6 +328,9 @@ class TorchTensor(AbstractTensor):
                 garbage_collect_data=garbage_collect_data,
             )
 
+            print("I am a pointer", type(ptr))
+            print("I am a pointer", ptr)
+
             ptr.description = self.description
             ptr.tags = self.tags
 
@@ -332,7 +339,8 @@ class TorchTensor(AbstractTensor):
                 ptr_ = self.ptr()
                 if ptr_ is not None:
                     ptr_.garbage_collect_data = False
-
+            
+            print("What hapened to pointer?", ptr)
             # we need to cache this weak reference to the pointer so that
             # if this method gets called multiple times we can simply re-use
             # the same pointer which was previously created
@@ -360,29 +368,32 @@ class TorchTensor(AbstractTensor):
                     return self
                 else:
                     output = ptr if no_wrap else ptr.wrap()
+                    print("this my final pointer", output)
+                    print("wrap?", no_wrap)
 
-            if self.requires_grad:
-                # This is for AutogradTensor to work on MultiPointerTensors
-                # With pre-initialized gradients, this should get it from AutogradTensor.grad
-                if preinitialize_grad:
-                    grad = output.child.grad
-                else:
-                    grad = output.attr("grad")
 
-                output.grad = grad
+            # if self.requires_grad:
+            #     # This is for AutogradTensor to work on MultiPointerTensors
+            #     # With pre-initialized gradients, this should get it from AutogradTensor.grad
+            #     if preinitialize_grad:
+            #         grad = output.child.grad
+            #     else:
+            #         grad = output.attr("grad")
 
-                # Because of the way PyTorch works, .grad is prone to
-                # create entirely new Python objects for the tensor, which
-                # inadvertently deletes our custom attributes (like .child)
-                # But, if we keep a backup reference around, PyTorch seems
-                # to re-use it, which means .grad keeps the attributes we
-                # want it to keep. #HackAlert
-                output.backup_grad = grad
+            #     output.grad = grad
 
-                if local_autograd:
-                    output = syft.AutogradTensor(
-                        data=output, preinitialize_grad=preinitialize_grad
-                    ).on(output)
+            #     # Because of the way PyTorch works, .grad is prone to
+            #     # create entirely new Python objects for the tensor, which
+            #     # inadvertently deletes our custom attributes (like .child)
+            #     # But, if we keep a backup reference around, PyTorch seems
+            #     # to re-use it, which means .grad keeps the attributes we
+            #     # want it to keep. #HackAlert
+            #     output.backup_grad = grad
+
+            #     if local_autograd:
+            #         output = syft.AutogradTensor(
+            #             data=output, preinitialize_grad=preinitialize_grad
+            #         ).on(output)
 
         else:
 

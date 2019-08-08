@@ -1,9 +1,21 @@
 import logging
+import inspect
+import re
+import types
+import copy
+import torch
+import tensorflow
+from torch import nn
+from functools import wraps
+
 
 import syft
 from syft import workers
 from syft.workers.base import BaseWorker
 from syft.frameworks.hook import BaseHook
+from syft.frameworks.tensorflow.tensorflow_attributes import TorchAttributes
+
+from syft.frameworks.tensorflow.tensors.interpreters import TorchTensor
 
 
 class TensorFlowHook(BaseHook):
@@ -21,6 +33,9 @@ class TensorFlowHook(BaseHook):
             return
         else:
             tensorflow.tf_hooked = True
+        
+        # Add all the torch attributes in the syft.torch attr
+        syft.tensorflow = TorchAttributes(tensorflow, self)
 
         if self.local_worker is None:
             # Every TorchHook instance should have a local worker which is
@@ -39,7 +54,7 @@ class TensorFlowHook(BaseHook):
 
         self.args_hook_for_overloaded_attr = {}
 
-        self._hook_native_tensor(torch.Tensor, TorchTensor)
+        self._hook_native_tensor(tensorflow.Tensor, TorchTensor)
 
     
     def _hook_native_tensor(self, tensor_type: type, syft_type: type):
@@ -76,7 +91,7 @@ class TensorFlowHook(BaseHook):
         # Overload auto overloaded with Torch methods
         self._add_methods_from__torch_tensor(tensor_type, syft_type)
 
-        self._hook_native_methods(tensor_type)
+        #self._hook_native_methods(tensor_type)
 
     
     def _add_registration_to___init__(hook_self, tensor_type: type, torch_tensor: bool = False):
@@ -174,23 +189,14 @@ class TensorFlowHook(BaseHook):
         tensor_type.is_wrapper = is_wrapper
 
         tensor_type.native_shape = tensor_type.shape
-        tensor_type.native_data = tensor_type.data
+        #tensor_type.native_data = tensor_type.data
 
-        tensor_type.native_grad_fn = tensor_type.grad_fn
+        #tensor_type.native_grad_fn = tensor_type.grad_fn
 
         def dim(self):
             return len(self.shape)
 
         tensor_type.dim = dim
-
-        @property
-        def grad_fn(self):
-            if self.has_child():
-                return self.child.grad_fn
-            else:
-                return self.native_grad_fn
-
-        tensor_type.grad_fn = grad_fn
 
 
     def _which_methods_should_we_auto_overload(self, tensor_type: type):
@@ -215,7 +221,7 @@ class TensorFlowHook(BaseHook):
         for attr in dir(tensor_type):
 
             # Conditions for overloading the method
-            if attr in syft.torch.exclude:
+            if attr in syft.tensorflow.exclude:
                 continue
             if not hasattr(tensor_type, attr):
                 continue

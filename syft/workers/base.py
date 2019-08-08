@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 import torch
 
 import syft as sy
-from syft.frameworks.torch.tensors.interpreters import AbstractTensor
+#from syft.frameworks.torch.tensors.interpreters import AbstractTensor
+from syft.frameworks.tensorflow.tensors.interpreters import AbstractTensor
 from syft.generic import ObjectStorage
 from syft.exceptions import GetNotPermittedError
 from syft.exceptions import WorkerNotFoundException
