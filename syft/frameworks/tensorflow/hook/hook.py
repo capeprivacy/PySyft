@@ -92,7 +92,8 @@ class TensorFlowHook(BaseHook):
         # Overload auto overloaded with Torch methods
         self._add_methods_from__torch_tensor(tensor_type, syft_type)
 
-        self._hook_native_methods(tensor_type)
+        # TODO Need to add 'get_hooked_method'
+        #self._hook_native_methods(tensor_type)
 
     
     def _add_registration_to___init__(hook_self, tensor_type: type, torch_tensor: bool = False):
