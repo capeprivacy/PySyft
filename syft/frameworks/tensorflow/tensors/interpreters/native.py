@@ -161,7 +161,10 @@ class TensorFlowTensor(AbstractTensor):
 
     def __eq__(self, other):
         return self.eq(other)
-
+    
+    # TODO: # _id is not writable for EagerTensor object.
+    # Renamed with sy_id but need go through the code
+    # to check where self._id is used. 
     @property
     def id(self):
         if self.is_wrapper:
