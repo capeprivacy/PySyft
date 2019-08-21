@@ -1,5 +1,6 @@
 import torch
 
+from syft.exceptions import DependencyError
 from syft.frameworks.torch import TorchHook
 from syft.workers import VirtualWorker
 from syft.grid import VirtualGrid
@@ -24,13 +25,22 @@ def create_sandbox(gbs, verbose=True, download_data=True):
     global jon
 
     if download_data:  # pragma: no cover
-        from sklearn.datasets import load_boston
-        from sklearn.datasets import load_breast_cancer
-        from sklearn.datasets import load_digits
-        from sklearn.datasets import load_diabetes
-        from sklearn.datasets import load_iris
-        from sklearn.datasets import load_wine
-        from sklearn.datasets import load_linnerud
+        try:
+            from sklearn.datasets import load_boston
+            from sklearn.datasets import load_breast_cancer
+            from sklearn.datasets import load_digits
+            from sklearn.datasets import load_diabetes
+            from sklearn.datasets import load_iris
+            from sklearn.datasets import load_wine
+            from sklearn.datasets import load_linnerud
+        except ImportError:
+            raise DependencyError(
+                (
+                    "You are missing the optional scikit-learn dependency. "
+                    "Please run `pip install scikit-learn` in your Python "
+                    "environment in order to use the sandbox."
+                )
+            )
 
         def load_sklearn(func, *tags):
             dataset = func()

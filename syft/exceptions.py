@@ -235,6 +235,12 @@ class IdNotUniqueError(Exception):
     pass
 
 
+class DependencyError(BaseException):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+
 def route_method_exception(exception, self, args, kwargs):
     try:
         if self.is_wrapper:
