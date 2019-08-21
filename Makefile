@@ -1,8 +1,14 @@
 venv: venv/bin/activate
 
-venv/bin/activate: requirements.txt requirements_dev.txt
-	test -e venv/bin/activate || virtualenv venv
-	. venv/bin/activate; pip install -Ur requirements.txt; pip install -Ur requirements_dev.txt; python setup.py install
+venv/bin/activate: requirements/
+	test -e venv/bin/activate || virtualenv venv -p python
+	(. venv/bin/activate; \
+		pip install -Ur requirements/requirements_base.txt; \
+		pip install -Ur requirements/requirements_torch.txt; \
+		pip install -Ur requirements/requirements_keras.txt; \
+		pip install -Ur requirements/requirements_dev.txt; \
+		python setup.py install; \
+	)
 	touch venv/bin/activate
 
 install_hooks: venv
