@@ -12,7 +12,16 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-requirements = read("requirements.txt").split()
+base_reqs = read("requirements/requirements_base.txt").split()
+keras_reqs = read("requirements/requirements_keras.txt").split()
+tensorflow_reqs = read("requirements/requirements_tensorflow.txt").split()
+torch_reqs = read("requirements/requirements_torch.txt").split()
+extras_dict = {
+    "udacity": torch_reqs + keras_reqs,
+    "keras": keras_reqs,
+    "tensorflow": tensorflow_reqs,
+    "torch": torch_reqs,
+}
 
 
 setup(
@@ -28,7 +37,8 @@ setup(
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     url="https://github.com/OpenMined/PySyft",
-    install_requires=requirements,
+    install_requires=base_reqs,
+    extras_require=extras_dict,
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-flake8"],
     classifiers=["Programming Language :: Python :: 3", "Operating System :: OS Independent"],

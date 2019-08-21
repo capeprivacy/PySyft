@@ -1,0 +1,1 @@
+syft_tensorflow@git+git://github.com/OpenMined/PySyft-Tensorflow.git@master#egg=syft_tensorflow
