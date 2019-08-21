@@ -18,10 +18,16 @@ if dependency_check.torch_available:
     framework_tensors.append(torch.Tensor)
     framework_shapes.append(torch.Size)
 
-framework_tensors = tuple(framework_tensors)
-FrameworkTensorType = Union[framework_tensors]
-FrameworkTensor = framework_tensors
+try:
+    framework_tensors = tuple(framework_tensors)
+    FrameworkTensorType = Union[framework_tensors]
+    FrameworkTensor = framework_tensors
 
-framework_shapes = tuple(framework_shapes)
-FrameworkShapeType = Union[framework_shapes]
-FrameworkShape = framework_shapes
+    framework_shapes = tuple(framework_shapes)
+    FrameworkShapeType = Union[framework_shapes]
+    FrameworkShape = framework_shapes
+except TypeError:  # no framework is installed
+    FrameworkTensorType = None
+    FrameworkShapeType = None
+    FrameworkTensor = None
+    FrameworkShape = None

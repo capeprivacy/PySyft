@@ -27,6 +27,16 @@ if dependency_check.tfe_available:
     from syft.frameworks.keras import KerasHook
     from syft.workers import TFECluster
     from syft.workers import TFEWorker
+
+    if not (dependency_check.torch_available or dependency_check.tensorflow_available):
+        logger.warning(
+            "Syft is installed without a framework. Please install a framework "
+            "binding with one of the following:\n\n"
+            "\t- `pip install syft[torch]`\n"
+            "\t- `pip install syft[tensorflow]`\n"
+            "\t- `pip install syft[udacity]`\n"
+        )
+
 else:
     logger.info("TF Encrypted Keras not available.")
 
