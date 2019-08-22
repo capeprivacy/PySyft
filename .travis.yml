@@ -15,8 +15,10 @@ matrix:
 install:
   - sudo apt-get update
   - hash -r
-  - pip3 install -r requirements.txt >build.log
-  - pip3 install -r requirements_dev.txt >build.log
+  - pip3 install -r requirements/requirements_base.txt >build.log
+  - pip3 install -r requirements/requirements_torch.txt >build.log
+  - pip3 install -r requirements/requirements_keras.txt >build.log
+  - pip3 install -r requirements/requirements_dev.txt >build.log
   - pip3 install flake8
   #- pip3 install flake8-docstrings
   - pip3 install flake8-comprehensions
