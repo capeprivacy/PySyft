@@ -44,8 +44,12 @@ class ObjectStorage:
         """
         if hasattr(obj, "id"):
             self.rm_obj(obj.id)
-        if hasattr(obj, "_owner"):
-            del obj._owner
+
+        # TODO -- cannot delete `_owner` (causes attribute error)
+        #         deleting `owner` causes infinite loop issues
+        #         Introduced a memory issue for now (although i think it is a weak ref anyway?)
+        # if hasattr(obj, "owner"):
+            # del obj._owner
 
     def get_obj(self, obj_id: Union[str, int]) -> object:
         """Returns the object from registry.

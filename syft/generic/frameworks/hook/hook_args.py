@@ -2,15 +2,19 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 
+import syft
 from syft.frameworks.torch.tensors.decorators.logging import LoggingTensor
 from syft.frameworks.torch.tensors.interpreters.autograd import AutogradTensor
+from syft.frameworks.torch.tensors.interpreters.large_precision import LargePrecisionTensor
 from syft.generic.frameworks.types import FrameworkTensorType
 from syft.workers.abstract import AbstractWorker
 
 from syft import exceptions
+
 
 hook_method_args_functions = {}
 hook_method_response_functions = {}
@@ -37,18 +41,23 @@ type_rule = {
     # should perhaps be of type ShareDict extending dict or something like this
     LoggingTensor: one,
     AutogradTensor: one,
+    LargePrecisionTensor: one,
 }
 
 # Dict to return the proper lambda function for the right framework or syft tensor type
 forward_func = {
     LoggingTensor: get_child,
     AutogradTensor: get_child,
+    LargePrecisionTensor: lambda i: i._internal_representation_to_large_ints(),
     "my_syft_tensor_type": get_child,
 }
 
 # Dict to return the proper lambda function for the right framework or syft tensor type
 backward_func = {
     LoggingTensor: lambda i: LoggingTensor().on(i, wrap=False),
+    LargePrecisionTensor: lambda i, **kwargs: LargePrecisionTensor(**kwargs).on(
+        LargePrecisionTensor.create_tensor_from_numpy(i, **kwargs), wrap=False
+    ),
     AutogradTensor: lambda i: AutogradTensor(data=i).on(i, wrap=False),
     "my_syft_tensor_type": lambda i, **kwargs: "my_syft_tensor_type(**kwargs).on(i, wrap=False)",
 }
@@ -121,7 +130,6 @@ def unwrap_args_from_method(attr, method_self, args, kwargs):
     # Specify an id to distinguish methods from different classes
     # As they won't be used with the same arg types
     attr_id = type(method_self).__name__ + "." + attr
-
     try:
         assert attr not in ambiguous_methods
 
@@ -306,7 +314,7 @@ def build_rule(args):
         return 0
 
 
-def build_unwrap_args_with_rules(args, rules, return_tuple=False):
+def build_unwrap_args_with_rules(args, rules, return_tuple=False, return_list=False):
     """
     Build a function given some rules to efficiently replace in the args object
     syft tensors with their child (but not pointer as they don't have .child),
@@ -329,10 +337,16 @@ def build_unwrap_args_with_rules(args, rules, return_tuple=False):
     lambdas = [
         typed_identity(a)  # return the same obj with an identity fct with a type check if needed
         if not r  # if the rule is a number == 0.
+
+        # TODO -- will only work for strings
+        else build_unwrap_args_with_rules(
+            a, r, True, True
+        ) if isinstance(r, list)
+
         else build_unwrap_args_with_rules(
             a, r, True
         )  # If not, call recursively build_unwrap_args_with_rules
-        if isinstance(r, (list, tuple))  # if the rule is a list or tuple.
+        if isinstance(r, tuple)
         # Last if not, rule is probably == 1 so use type to return the right transformation.
         else lambda i: forward_func[type(i)](i)
         for a, r in zip(args, rules)  # And do this for all the args / rules provided
@@ -343,7 +357,7 @@ def build_unwrap_args_with_rules(args, rules, return_tuple=False):
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold,
+        2: two_fold(return_list),
         3: three_fold,
         4: four_fold,
         5: five_fold,
@@ -476,10 +490,15 @@ def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return
     lambdas = [
         (lambda i: i)  # return the same object
         if not r  # if the rule is a number == 0.
+        else list(
+          build_wrap_response_with_rules(
+              a, r, wrap_type, wrap_args, True
+          )
+        ) if isinstance(r, list)
         else build_wrap_response_with_rules(
             a, r, wrap_type, wrap_args, True
         )  # If not, call recursively build_wrap_response_with_rules
-        if isinstance(r, (list, tuple))  # if the rule is a list or tuple.
+        if isinstance(r, tuple)
         # Last if not, rule is probably == 1 so use type to return the right transformation.
         else lambda i: backward_func[wrap_type](i, **wrap_args)
         for a, r in zip(response, rules)  # And do this for all the responses / rules provided
@@ -490,7 +509,7 @@ def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold,
+        2: two_fold(False),
         3: three_fold,
         4: four_fold,
         5: five_fold,
@@ -520,8 +539,14 @@ def one_fold(return_tuple, **kwargs):
     return {False: _one_fold, True: tuple_one_fold}[return_tuple]
 
 
-def two_fold(lambdas, args, **kwargs):
-    return lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs)
+def two_fold(return_list, **kwargs):
+  def _two_fold(lambdas, args, **kwargs):
+    return lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs),
+
+  def _list_two_fold(lambdas, args, **kwargs):
+    return [lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs)]
+
+  return { False: _two_fold, True: _list_two_fold }[return_list]
 
 
 def three_fold(lambdas, args, **kwargs):
@@ -716,6 +741,8 @@ def register_tensor(
         tensor.id = response_ids.pop(-1)
     except IndexError:
         raise exceptions.ResponseSignatureError
+
+
     owner.register_obj(tensor)
 
 
@@ -751,7 +778,7 @@ def build_register_response(response: object, rules: Tuple, return_tuple: bool =
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold,
+        2: two_fold(False),
         3: three_fold,
         4: four_fold,
         5: five_fold,
