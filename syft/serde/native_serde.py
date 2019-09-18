@@ -15,6 +15,15 @@ from syft import serde
 
 # Simplify/Detail Collections (list, set, tuple, etc.)
 
+def _simplify_list(my_list: list) -> list:
+    # Step 0: initialize empty list
+    pieces = list()
+
+    # Step 1: serialize each part of the collection
+    for part in my_list:
+        pieces.append(serde._simplify(part))
+
+    return pieces
 
 def _simplify_collection(my_collection: Collection) -> Tuple:
     """
@@ -75,6 +84,19 @@ def _detail_collection_list(worker: AbstractWorker, my_collection: Tuple) -> Col
 
     return pieces
 
+def _detail_list(worker: AbstractWorker, my_collection: list) -> list:
+  pieces = list()
+
+  # Step 1: deserialize each part of the collection
+  for part in my_collection:
+      try:
+          pieces.append(
+              serde._detail(worker, part).decode("utf-8")
+          )  # transform bytes back to string
+      except AttributeError:
+          pieces.append(serde._detail(worker, part))
+
+  return pieces
 
 def _detail_collection_set(worker: AbstractWorker, my_collection: Tuple) -> Collection:
     """
@@ -300,7 +322,7 @@ def _detail_slice(worker: AbstractWorker, my_slice: Tuple[int, int, int]) -> sli
 MAP_NATIVE_SIMPLIFIERS_AND_DETAILERS = OrderedDict(
     {
         dict: (_simplify_dictionary, _detail_dictionary),
-        list: (_simplify_collection, _detail_collection_list),
+        list: (_simplify_list, _detail_list),
         range: (_simplify_range, _detail_range),
         set: (_simplify_collection, _detail_collection_set),
         slice: (_simplify_slice, _detail_slice),

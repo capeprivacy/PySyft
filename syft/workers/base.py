@@ -284,6 +284,7 @@ class BaseWorker(AbstractWorker, ObjectStorage):
         if self.verbose:
             print(f"worker {self} received {sy.codes.code2MSGTYPE[msg_type]} {contents}")
         # Step 1: route message to appropriate function
+
         response = self._message_router[msg_type](contents)
 
         # Step 2: Serialize the message to simple python objects
@@ -473,7 +474,11 @@ class BaseWorker(AbstractWorker, ObjectStorage):
         Returns:
             A list of PointerTensors or a single PointerTensor if just one response is expected.
         """
-        if return_ids is None:
+        # TODO -- this is quite hacky but we were returning a pointer tensor
+        #         on commands that set an attribute, which shouldn't happen
+        if return_ids is None and message[0] is '__setitem__':
+            return_ids = []
+        elif return_ids is None:
             return_ids = tuple([sy.ID_PROVIDER.pop()])
 
         try:
@@ -530,7 +535,6 @@ class BaseWorker(AbstractWorker, ObjectStorage):
         if hasattr(obj, "allowed_to_get") and not obj.allowed_to_get():
             raise GetNotPermittedError()
         else:
-            self.de_register_obj(obj)
             return obj
 
     def register_obj(self, obj: object, obj_id: Union[str, int] = None):

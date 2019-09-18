@@ -276,6 +276,7 @@ def serialize(
     else:
         simple_objects = obj
 
+
     # 2) Serialize
     # serialize into a binary
     if force_no_serialization:
