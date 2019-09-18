@@ -1,15 +1,21 @@
-import syft
-import torch
-from syft.frameworks.torch.tensors.interpreters import abstract
-from syft.frameworks.torch import pointers
-
-from syft.workers import AbstractWorker
-
 from typing import List
 from typing import Union
 
+import syft
+from syft.generic.frameworks.hook.hook_args import one
+from syft.generic.frameworks.hook.hook_args import register_type_rule
+from syft.generic.frameworks.hook.hook_args import register_forward_func
+from syft.generic.frameworks.hook.hook_args import register_backward_func
+from syft.generic.frameworks.types import FrameworkShapeType
+from syft.generic.frameworks.types import FrameworkTensor
+from syft.generic.tensor import AbstractTensor
+from syft.generic.pointers.object_pointer import ObjectPointer
+from syft.workers.abstract import AbstractWorker
 
-class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
+from syft.exceptions import RemoteObjectFoundError
+
+
+class PointerTensor(ObjectPointer, AbstractTensor):
     """A pointer to another tensor.
 
     A PointerTensor forwards all API calls to the remote.PointerTensor objects
@@ -19,7 +25,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
     remote machine as specified by self.location. Specifically, every
     PointerTensor has a tensor located somewhere that it points to (they should
     never exist by themselves). Note that PointerTensor objects can point to
-    both torch.Tensor objects AND to other PointerTensor objects. Furthermore,
+    both FrameworkTensor objects AND to other PointerTensor objects. Furthermore,
     the objects being pointed to can be on the same machine or (more commonly)
     on a different one. Note further that a PointerTensor does not know the
     nature how it sends messages to the tensor it points to (whether over
@@ -46,7 +52,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         owner: "AbstractWorker" = None,
         id: Union[str, int] = None,
         garbage_collect_data: bool = True,
-        shape: torch.Size = None,
+        shape: FrameworkShapeType = None,
         point_to_attr: str = None,
         tags: List[str] = None,
         description: str = None,
@@ -136,7 +142,12 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         self._data = new_data
 
     def is_none(self):
-        return self.owner.request_is_remote_tensor_none(self)
+        try:
+            return self.owner.request_is_remote_tensor_none(self)
+        except:
+            """TODO: this might hide useful errors, but we don't have good
+            enough remote error handling yet to do anything better."""
+            return True
 
     @staticmethod
     def create_pointer(
@@ -146,14 +157,14 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         register: bool = False,
         owner: AbstractWorker = None,
         ptr_id: (str or int) = None,
-        garbage_collect_data: bool = True,
+        garbage_collect_data=None,
         shape=None,
         local_autograd=False,
         preinitialize_grad=False,
     ) -> "PointerTensor":
-        """Creates a pointer to the "self" torch.Tensor object.
+        """Creates a pointer to the "self" FrameworkTensor object.
 
-        This method is called on a torch.Tensor object, returning a pointer
+        This method is called on a FrameworkTensor object, returning a pointer
         to that object. This method is the CORRECT way to create a pointer,
         and the parameters of this method give all possible attributes that
         a pointer can be created with.
@@ -198,8 +209,8 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
             preinitialize_grad: Initialize gradient for AutogradTensors to a tensor.
 
         Returns:
-            A torch.Tensor[PointerTensor] pointer to self. Note that this
-            object will likely be wrapped by a torch.Tensor wrapper.
+            A FrameworkTensor[PointerTensor] pointer to self. Note that this
+            object itself will likely be wrapped by a FrameworkTensor wrapper.
         """
         if owner is None:
             owner = tensor.owner
@@ -219,7 +230,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
                 id_at_location=id_at_location,
                 owner=owner,
                 id=ptr_id,
-                garbage_collect_data=garbage_collect_data,
+                garbage_collect_data=True if garbage_collect_data is None else garbage_collect_data,
                 shape=shape,
                 tags=tensor.tags,
                 description=tensor.description,
@@ -265,25 +276,25 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
             An AbstractTensor object which is the tensor (or chain) that this
             object used to point to #on a remote machine.
         """
-        tensor = pointers.ObjectPointer.get(self, deregister_ptr=deregister_ptr)
+        tensor = ObjectPointer.get(self, deregister_ptr=deregister_ptr)
 
         # TODO: remove these 3 lines
         # The fact we have to check this means
         # something else is probably broken
         if tensor.is_wrapper:
-            if isinstance(tensor.child, torch.Tensor):
+            if isinstance(tensor.child, FrameworkTensor):
                 return tensor.child
 
         return tensor
 
     def attr(self, attr_name):
-        attr_ptr = syft.PointerTensor(
+        attr_ptr = PointerTensor(
             id=self.id,
             owner=self.owner,
             location=self.location,
             id_at_location=self.id_at_location,
             point_to_attr=self._create_attr_name_string(attr_name),
-        ).wrap()
+        ).wrap(register=False)
         self.__setattr__(attr_name, attr_ptr)
         return attr_ptr
 
@@ -306,6 +317,23 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         return response
 
     fix_precision = fix_prec
+
+    def float_prec(self, *args, **kwargs):
+        """
+        Send a command to remote worker to transform a fix_precision tensor back to float_precision
+
+        Returns:
+            A pointer to a Tensor
+        """
+
+        # Send the command
+        command = ("float_prec", self, args, kwargs)
+
+        response = self.owner.send_command(self.location, command)
+
+        return response
+
+    float_precision = float_prec
 
     def share(self, *args, **kwargs):
         """
@@ -342,7 +370,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         """
         This function takes the attributes of a PointerTensor and saves them in a dictionary
         Args:
-            ptr (pointers.PointerTensor): a PointerTensor
+            ptr (PointerTensor): a PointerTensor
         Returns:
             tuple: a tuple holding the unique attributes of the pointer
         Examples:
@@ -376,7 +404,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
             worker: the worker doing the deserialization
             tensor_tuple: a tuple holding the attributes of the PointerTensor
         Returns:
-            PointerTensor: a pointers.PointerTensor
+            PointerTensor: a PointerTensor
         Examples:
             ptr = detail(data)
         """
@@ -387,7 +415,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
             worker_id = worker_id.decode()
 
         if shape is not None:
-            shape = torch.Size(syft.serde._detail(worker, shape))
+            shape = syft.hook.create_shape(syft.serde._detail(worker, shape))
 
         # If the pointer received is pointing at the current worker, we load the tensor instead
         if worker_id == worker.id:
@@ -402,7 +430,7 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
 
                 if tensor is not None:
 
-                    if not tensor.is_wrapper and not isinstance(tensor, torch.Tensor):
+                    if not tensor.is_wrapper and not isinstance(tensor, FrameworkTensor):
                         # if the tensor is a wrapper then it doesn't need to be wrapped
                         # i the tensor isn't a wrapper, BUT it's just a plain torch tensor,
                         # then it doesn't need to be wrapped.
@@ -415,9 +443,9 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         # Else we keep the same Pointer
         else:
 
-            location = syft.torch.hook.local_worker.get_worker(worker_id)
+            location = syft.hook.local_worker.get_worker(worker_id)
 
-            ptr = pointers.PointerTensor(
+            ptr = PointerTensor(
                 location=location,
                 id_at_location=id_at_location,
                 owner=worker,
@@ -440,3 +468,9 @@ class PointerTensor(pointers.ObjectPointer, abstract.AbstractTensor):
         #         val = v
         #     new_data[key] = val
         # return PointerTensor(**new_data)
+
+
+### Register the tensor with hook_args.py ###
+register_type_rule({PointerTensor: one})
+register_forward_func({PointerTensor: lambda p: (_ for _ in ()).throw(RemoteObjectFoundError(p))})
+register_backward_func({PointerTensor: lambda i: i})

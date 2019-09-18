@@ -2,7 +2,8 @@ import torch
 import torch as th
 import syft
 
-from syft.frameworks.torch.pointers import PointerTensor
+from syft.frameworks.torch.tensors.interpreters.precision import FixedPrecisionTensor
+from syft.generic.pointers.pointer_tensor import PointerTensor
 import pytest
 
 
@@ -17,10 +18,57 @@ def test_create_pointer(workers):
 
 
 def test_send_default_garbage_collector_true(workers):
-    """Pointer tensor should be garbage collected by default."""
+    """
+    Remote tensor should be garbage collected by default on
+    deletion of the Pointer tensor pointing to remote tensor
+    """
     x = torch.Tensor([-1, 2])
     x_ptr = x.send(workers["alice"])
     assert x_ptr.child.garbage_collect_data
+
+
+def test_send_garbage_collect_data_false(workers):
+    """
+    Remote tensor should be not garbage collected on
+    deletion of the Pointer tensor pointing to remote tensor
+    """
+    x = torch.Tensor([-1, 2])
+    x_ptr = x.send(workers["alice"])
+    x_ptr.garbage_collection = False
+    assert x_ptr.child.garbage_collect_data == False
+
+
+def test_send_gc_false(workers):
+    """
+    Remote tensor should be not garbage collected on
+    deletion of the Pointer tensor pointing to remote tensor
+     """
+    x = torch.Tensor([-1, 2])
+    x_ptr = x.send(workers["alice"])
+    x_ptr.gc = False
+    assert x_ptr.child.garbage_collect_data == False
+    assert x_ptr.gc == False, "property GC is not in sync"
+    assert x_ptr.garbage_collection == False, "property garbage_collection is not in sync"
+
+
+def test_send_gc_true(workers):
+    """
+    Remote tensor by default is garbage collected on
+    deletion of Pointer Tensor
+    """
+    x = torch.Tensor([-1, 2])
+    x_ptr = x.send(workers["alice"])
+
+    assert x_ptr.gc == True
+
+
+def test_send_disable_gc(workers):
+    """Pointer tensor should be not garbage collected."""
+    x = torch.Tensor([-1, 2])
+    x_ptr = x.send(workers["alice"]).disable_gc
+    assert x_ptr.child.garbage_collect_data == False
+    assert x_ptr.gc == False, "property GC is not in sync"
+    assert x_ptr.garbage_collection == False, "property garbage_collection is not in sync"
 
 
 def test_send_get(workers):
@@ -309,3 +357,77 @@ def test_raising_error_when_item_func_called(workers):
     pointer = PointerTensor(id=1000, location=workers["alice"], owner=workers["me"])
     with pytest.raises(RuntimeError):
         pointer.item()
+
+
+def test_fix_prec_on_pointer_tensor(workers):
+    """
+    Ensure .fix_precision() works as expected.
+    """
+    bob = workers["bob"]
+
+    tensor = torch.tensor([1, 2, 3, 4.0])
+    ptr = tensor.send(bob)
+
+    ptr = ptr.fix_precision()
+    remote_tensor = bob._objects[ptr.id_at_location]
+
+    assert isinstance(ptr.child, PointerTensor)
+    assert isinstance(remote_tensor.child, FixedPrecisionTensor)
+
+
+def test_fix_prec_on_pointer_of_pointer(workers):
+    """
+    Ensure .fix_precision() works along a chain of pointers.
+    """
+    bob = workers["bob"]
+    alice = workers["alice"]
+
+    tensor = torch.tensor([1, 2, 3, 4.0])
+    ptr = tensor.send(bob)
+    ptr = ptr.send(alice)
+
+    ptr = ptr.fix_precision()
+
+    alice_tensor = alice._objects[ptr.id_at_location]
+    remote_tensor = bob._objects[alice_tensor.id_at_location]
+
+    assert isinstance(ptr.child, PointerTensor)
+    assert isinstance(remote_tensor.child, FixedPrecisionTensor)
+
+
+def test_float_prec_on_pointer_tensor(workers):
+    """
+    Ensure .float_precision() works as expected.
+    """
+    bob = workers["bob"]
+
+    tensor = torch.tensor([1, 2, 3, 4.0])
+    ptr = tensor.send(bob)
+    ptr = ptr.fix_precision()
+
+    ptr = ptr.float_precision()
+    remote_tensor = bob._objects[ptr.id_at_location]
+
+    assert isinstance(ptr.child, PointerTensor)
+    assert isinstance(remote_tensor, torch.Tensor)
+
+
+def test_float_prec_on_pointer_of_pointer(workers):
+    """
+    Ensure .float_precision() works along a chain of pointers.
+    """
+    bob = workers["bob"]
+    alice = workers["alice"]
+
+    tensor = torch.tensor([1, 2, 3, 4.0])
+    ptr = tensor.send(bob)
+    ptr = ptr.send(alice)
+    ptr = ptr.fix_precision()
+
+    ptr = ptr.float_precision()
+
+    alice_tensor = alice._objects[ptr.id_at_location]
+    remote_tensor = bob._objects[alice_tensor.id_at_location]
+
+    assert isinstance(ptr.child, PointerTensor)
+    assert isinstance(remote_tensor, torch.Tensor)

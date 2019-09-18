@@ -6,8 +6,8 @@ import torch as th
 from unittest import mock
 from types import MethodType
 
-from syft.workers import WebsocketClientWorker
-from syft.workers import WebsocketServerWorker
+from syft.workers.websocket_client import WebsocketClientWorker
+from syft.workers.websocket_server import WebsocketServerWorker
 
 
 def test_create_already_existing_worker(hook):
@@ -79,6 +79,7 @@ def test_execute_command_self(hook):
     message = bob.create_message_execute_command(
         command_name="mocked_function", command_owner="self"
     )
+
     serialized_message = sy.serde.serialize(message)
 
     response = bob._recv_msg(serialized_message)
