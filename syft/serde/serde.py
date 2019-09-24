@@ -39,6 +39,9 @@ from lz4 import (  # noqa: F401
     frame,
 )  # needed as otherwise we will get: module 'lz4' has no attribute 'frame'
 import msgpack
+import msgpack_numpy as m
+m.patch()
+
 import zstd
 
 import syft
@@ -282,7 +285,7 @@ def serialize(
     if force_no_serialization:
         return simple_objects
     else:
-        binary = msgpack.dumps(simple_objects)
+        binary = m.dumps(simple_objects)
 
     # 3) Compress
     # optionally compress the binary and return the result
@@ -328,7 +331,7 @@ def deserialize(binary: bin, worker: AbstractWorker = None, details=True) -> obj
     # 2) Deserialize
     # This function converts the binary into the appropriate python
     # object (or nested dict/collection of python objects)
-    simple_objects = msgpack.loads(binary, use_list=False)
+    simple_objects = m.loads(binary, use_list=False)
 
     if details:
         # 3) Detail
