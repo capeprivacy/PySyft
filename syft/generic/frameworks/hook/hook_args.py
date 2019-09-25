@@ -306,7 +306,7 @@ def build_rule(args):
         return 0
 
 
-def build_unwrap_args_with_rules(args, rules, return_tuple=False, return_list=False):
+def build_unwrap_args_with_rules(args, rules, return_tuple=False):
     """
     Build a function given some rules to efficiently replace in the args object
     syft tensors with their child (but not pointer as they don't have .child),
@@ -329,12 +329,9 @@ def build_unwrap_args_with_rules(args, rules, return_tuple=False, return_list=Fa
     lambdas = [
         typed_identity(a)  # return the same obj with an identity fct with a type check if needed
         if not r  # if the rule is a number == 0.
-
         # TODO -- will only work for strings
-        else build_unwrap_args_with_rules(
-            a, r, True, True
-        ) if isinstance(r, list)
-
+        else build_unwrap_args_with_rules(a, r, True, True)
+        if isinstance(r, list)
         else build_unwrap_args_with_rules(
             a, r, True
         )  # If not, call recursively build_unwrap_args_with_rules
@@ -349,7 +346,7 @@ def build_unwrap_args_with_rules(args, rules, return_tuple=False, return_list=Fa
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold(return_list),
+        2: two_fold,
         3: three_fold,
         4: four_fold,
         5: five_fold,
@@ -462,7 +459,9 @@ def four_layers(idx1, *ids):
 get_element_at = {1: one_layer, 2: two_layers, 3: three_layers, 4: four_layers}
 
 
-def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return_tuple=False):
+def build_wrap_response_with_rules(
+    response, rules, wrap_type, wrap_args, return_tuple=False, return_list=False
+):
     """
     Build a function given some rules to efficiently replace in the response object
     syft or framework tensors with a wrapper, and do nothing for other types of object
@@ -482,11 +481,8 @@ def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return
     lambdas = [
         (lambda i: i)  # return the same object
         if not r  # if the rule is a number == 0.
-        else list(
-          build_wrap_response_with_rules(
-              a, r, wrap_type, wrap_args, True
-          )
-        ) if isinstance(r, list)
+        else build_wrap_response_with_rules(a, r, wrap_type, wrap_args, True, True)
+        if isinstance(r, list)
         else build_wrap_response_with_rules(
             a, r, wrap_type, wrap_args, True
         )  # If not, call recursively build_wrap_response_with_rules
@@ -501,7 +497,7 @@ def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold(False),
+        2: two_fold,
         3: three_fold,
         4: four_fold,
         5: five_fold,
@@ -513,6 +509,9 @@ def build_wrap_response_with_rules(response, rules, wrap_type, wrap_args, return
         f = folds[len(lambdas)]
     except KeyError:
         f = many_fold
+
+    if return_list:
+        return lambda x: list(f(lambdas, x))
 
     return lambda x: f(lambdas, x)
 
@@ -531,14 +530,8 @@ def one_fold(return_tuple, **kwargs):
     return {False: _one_fold, True: tuple_one_fold}[return_tuple]
 
 
-def two_fold(return_list, **kwargs):
-  def _two_fold(lambdas, args, **kwargs):
-    return lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs),
-
-  def _list_two_fold(lambdas, args, **kwargs):
-    return [lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs)]
-
-  return { False: _two_fold, True: _list_two_fold }[return_list]
+def two_fold(lambdas, args, **kwargs):
+    return lambdas[0](args[0], **kwargs), lambdas[1](args[1], **kwargs)
 
 
 def three_fold(lambdas, args, **kwargs):
@@ -734,7 +727,6 @@ def register_tensor(
     except IndexError:
         raise exceptions.ResponseSignatureError
 
-
     owner.register_obj(tensor)
 
 
@@ -770,7 +762,7 @@ def build_register_response(response: object, rules: Tuple, return_tuple: bool =
     folds = {
         0: zero_fold,
         1: one_fold(return_tuple),
-        2: two_fold(False),
+        2: two_fold,
         3: three_fold,
         4: four_fold,
         5: five_fold,
