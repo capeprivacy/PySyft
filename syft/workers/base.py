@@ -421,13 +421,16 @@ class BaseWorker(AbstractWorker, ObjectStorage):
             # At this point, the command is ALWAYS a path to a
             # function (i.e., torch.nn.functional.relu). Thus,
             # we need to fetch this function and run it.
-
             sy.framework.command_guard(command_name)
 
             paths = command_name.split(".")
             command = self
             for path in paths:
-                command = getattr(command, path)
+                # 
+                if path=='python':
+                    pass
+                else:
+                    command = getattr(command, path)
 
             response = command(*args, **kwargs)
 

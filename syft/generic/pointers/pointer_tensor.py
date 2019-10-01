@@ -415,7 +415,10 @@ class PointerTensor(ObjectPointer, AbstractTensor):
             worker_id = worker_id.decode()
 
         if shape is not None:
-            shape = syft.hook.create_shape(syft.serde._detail(worker, shape))
+            # [TODO] should create tf.TensorShape when create_shape gets called
+            #shape = syft.hook.create_shape(syft.serde._detail(worker, shape))
+            import tensorflow as tf
+            shape = tf.TensorShape(syft.serde._detail(worker, shape))
 
         # If the pointer received is pointing at the current worker, we load the tensor instead
         if worker_id == worker.id:

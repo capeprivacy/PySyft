@@ -416,12 +416,11 @@ class FrameworkHook(ABC):
                 tensor_type = syft.framework.Tensor
 
             command = (cmd_name, None, args, kwargs)
-
             try:
                 handle_func_command = tensor_type.handle_func_command
             except AttributeError:
                 handle_func_command = syft.framework.Tensor.handle_func_command
-
+ 
             response = handle_func_command(command)
 
             return response

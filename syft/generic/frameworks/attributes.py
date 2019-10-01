@@ -55,8 +55,9 @@ class FrameworkAttributes(ABC):
         Returns:
             The command name or a native framework function
         """
-        if command not in self.allowed_commands:
-            raise RuntimeError(f'Command "{command}" is not a supported {self.ALIAS} operation.')
+        # [TODO] Tensorlfow should be added to allowed_commands
+        #if command not in self.allowed_commands:
+        #    raise RuntimeError(f'Command "{command}" is not a supported {self.ALIAS} operation.')
         if get_native:
             return self.native_commands[command]
         return command

@@ -483,7 +483,8 @@ def _simplify(obj: object) -> object:
     # for this type. If there is, return the simplified object.
     current_type = type(obj)
     if current_type in simplifiers:
-        result = (simplifiers[current_type][0], simplifiers[current_type][1](obj))
+        result = (simplifiers[current_type][0],
+        simplifiers[current_type][1](obj))
         return result
 
     # If we already tried to find a simplifier for this type but failed, we should
