@@ -281,17 +281,17 @@ class FrameworkHook(ABC):
         tensor_type.__init__ = new___init__
 
     @classmethod
-    def _perform_function_overloading(cls, parent_module_name, parent_module, func):
+    def _perform_function_overloading(cls, parent_module_name, parent_module, func_name):
 
         # Where the overloading happens
         # 1. Get native function
-        native_func = getattr(parent_module, func)
+        native_func = getattr(parent_module, func_name)
         # 2. Check it is a proper function
         if type(native_func) in [types.FunctionType, types.BuiltinFunctionType]:
             # 3. Build the hooked function
-            new_func = cls._get_hooked_func(parent_module_name, native_func)
+            new_func = cls._get_hooked_func(parent_module_name, func_name, native_func)
             # 4. Move the native function
-            setattr(parent_module, f"native_{func}", native_func)
+            setattr(parent_module, f"native_{func_name}", native_func)
             # 5. Put instead the hooked one
             setattr(parent_module, func, new_func)
 
@@ -389,7 +389,7 @@ class FrameworkHook(ABC):
         return overloaded_native_method
 
     @classmethod
-    def _get_hooked_func(cls, public_module_name, attr):
+    def _get_hooked_func(cls, public_module_name, func_api_name, func):
         """
         Hook a function in order to inspect its args and search for pointer
         or other syft tensors.
@@ -406,7 +406,7 @@ class FrameworkHook(ABC):
             the hooked method
         """
 
-        cmd_name = f"{public_module_name}.{attr.__name__}"
+        cmd_name = f"{public_module_name}.{func_api_name}"
 
         @wraps(attr)
         def overloaded_func(*args, **kwargs):
