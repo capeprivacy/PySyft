@@ -5,8 +5,6 @@ from typing import Tuple
 
 import numpy as np
 
-from syft.frameworks.torch.tensors.decorators.logging import LoggingTensor
-from syft.frameworks.torch.tensors.interpreters.autograd import AutogradTensor
 from syft.generic.frameworks.types import FrameworkTensorType
 from syft.workers.abstract import AbstractWorker
 
@@ -36,22 +34,14 @@ type_rule = {
     dict: one,  # FIXME This is for additiveShareTensor.child, it can be confusing and AST.child
     np.ndarray: one,
     # should perhaps be of type ShareDict extending dict or something like this
-    LoggingTensor: one,
-    AutogradTensor: one,
 }
 
 # Dict to return the proper lambda function for the right framework or syft tensor type
-forward_func = {
-    LoggingTensor: get_child,
-    AutogradTensor: get_child,
-    "my_syft_tensor_type": get_child,
-}
+forward_func = {"my_syft_tensor_type": get_child}
 
 # Dict to return the proper lambda function for the right framework or syft tensor type
 backward_func = {
-    LoggingTensor: lambda i: LoggingTensor().on(i, wrap=False),
-    AutogradTensor: lambda i: AutogradTensor(data=i).on(i, wrap=False),
-    "my_syft_tensor_type": lambda i, **kwargs: "my_syft_tensor_type(**kwargs).on(i, wrap=False)",
+    "my_syft_tensor_type": lambda i, **kwargs: "my_syft_tensor_type(**kwargs).on(i, wrap=False)"
 }
 
 # Methods or functions whose signature changes a lot and that we don't want to "cache", because
@@ -330,12 +320,12 @@ def build_unwrap_args_with_rules(args, rules, return_tuple=False):
         typed_identity(a)  # return the same obj with an identity fct with a type check if needed
         if not r  # if the rule is a number == 0.
         # TODO -- will only work for strings
-        else build_unwrap_args_with_rules(a, r, True, True)
+        else build_unwrap_args_with_rules(a, r, True)
         if isinstance(r, list)
         else build_unwrap_args_with_rules(
             a, r, True
         )  # If not, call recursively build_unwrap_args_with_rules
-        if isinstance(r, tuple)
+        if isinstance(r, (tuple, list))
         # Last if not, rule is probably == 1 so use type to return the right transformation.
         else lambda i: forward_func[type(i)](i)
         for a, r in zip(args, rules)  # And do this for all the args / rules provided
